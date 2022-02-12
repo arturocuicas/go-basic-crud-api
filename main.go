@@ -85,8 +85,36 @@ func deleteTask(w http.ResponseWriter, r *http.Request) {
 	for i, t := range tasks {
 		if taskId == t.ID {
 			tasks = append(tasks[:i], tasks[i+1:]...)
-			fmt.Fprintf(w, "The task with ID %v hasbeen remove succesfully", taskId)
+			fmt.Fprintf(w, "The task with ID %v hasbeen remove successfully", taskId)
 
+		}
+	}
+}
+
+func updateTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	taskId, err := uuid.Parse(vars["id"])
+	var updateTask task
+
+	if err != nil {
+		fmt.Fprintf(w, "Invalid UUID")
+	}
+
+	reqBody, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		fmt.Fprintf(w, "Please Enter Valid Data")
+	}
+
+	json.Unmarshal(reqBody, &updateTask)
+
+	for i, t := range tasks {
+		if t.ID == taskId {
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			updateTask.ID = taskId
+			tasks = append(tasks, updateTask)
+
+			fmt.Fprintf(w, "The task with UUID %v has been updated successfully", taskId)
 		}
 	}
 }
@@ -98,5 +126,6 @@ func main() {
 	router.HandleFunc("/tasks", createTask).Methods("POST")
 	router.HandleFunc("/tasks/{id}", getTask).Methods("GET")
 	router.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
+	router.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
