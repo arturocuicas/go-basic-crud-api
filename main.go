@@ -38,6 +38,23 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
 }
 
+func getTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	taskId, err := uuid.Parse(vars["id"])
+
+	if err != nil {
+		fmt.Fprintf(w, "Invalid ID")
+		return
+	}
+
+	for _, t := range tasks {
+		if t.ID == taskId {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(t)
+		}
+	}
+}
+
 func createTask(w http.ResponseWriter, r *http.Request) {
 	var newTask task
 	reqBody, err := ioutil.ReadAll(r.Body)
@@ -56,7 +73,7 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newTask)
 }
 
-func getTask(w http.ResponseWriter, r *http.Request) {
+func deleteTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	taskId, err := uuid.Parse(vars["id"])
 
@@ -65,10 +82,11 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, t := range tasks {
-		if t.ID == taskId {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(t)
+	for i, t := range tasks {
+		if taskId == t.ID {
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			fmt.Fprintf(w, "The task with ID %v hasbeen remove succesfully", taskId)
+
 		}
 	}
 }
@@ -79,5 +97,6 @@ func main() {
 	router.HandleFunc("/tasks", getTasks).Methods("GET")
 	router.HandleFunc("/tasks", createTask).Methods("POST")
 	router.HandleFunc("/tasks/{id}", getTask).Methods("GET")
+	router.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
